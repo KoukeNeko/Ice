@@ -193,8 +193,8 @@ struct GeneralSettingsPane: View {
         useIceBar
         if settings.useIceBar {
             iceBarLocationPicker
-            onlyOnNotchScreens
         }
+        onlyOnNotchScreens
     }
 
     @ViewBuilder

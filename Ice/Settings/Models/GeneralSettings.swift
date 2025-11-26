@@ -87,14 +87,17 @@ final class GeneralSettings: ObservableObject {
         }
     }
 
-    /// A Boolean value that indicates whether hiding should be bypassed
-    /// because the current screen does not have a notch.
-    var isNotchBypassActive: Bool {
-        guard onlyShowOnScreensWithNotch else {
+    /// A Boolean value that indicates whether the Ice Bar should only
+    /// be used on screens with a notch.
+    var shouldUseIceBarOnCurrentScreen: Bool {
+        guard useIceBar else {
             return false
         }
+        guard onlyShowOnScreensWithNotch else {
+            return true
+        }
         let activeScreen = NSScreen.screenWithActiveMenuBar ?? NSScreen.main
-        return !(activeScreen?.hasNotch ?? false)
+        return activeScreen?.hasNotch ?? false
     }
 
     /// Encoder for properties.
@@ -297,12 +300,12 @@ final class GeneralSettings: ObservableObject {
     }
 
     /// Applies bypass settings by showing all menu bar sections
-    /// when any bypass condition is active.
+    /// when the wide screen bypass is active.
     private func applyBypassIfNeeded() {
         guard let menuBarManager = appState?.menuBarManager else {
             return
         }
-        if isWideScreenBypassActive || isNotchBypassActive {
+        if isWideScreenBypassActive {
             menuBarManager.iceBarPanel.close()
             for section in menuBarManager.sections {
                 section.controlItem.state = .showSection

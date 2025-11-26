@@ -59,19 +59,16 @@ final class MenuBarSection {
         guard let appState else {
             return false
         }
-        if appState.settings.general.isWideScreenBypassActive || appState.settings.general.isNotchBypassActive {
+        if appState.settings.general.isWideScreenBypassActive {
             return false
         }
-        return appState.settings.general.useIceBar
+        return appState.settings.general.shouldUseIceBarOnCurrentScreen
     }
 
     /// A Boolean value that indicates whether hiding is bypassed
-    /// due to wide screen or notch settings.
+    /// due to wide screen settings.
     private var isBypassActive: Bool {
-        guard let general = appState?.settings.general else {
-            return false
-        }
-        return general.isWideScreenBypassActive || general.isNotchBypassActive
+        appState?.settings.general.isWideScreenBypassActive ?? false
     }
 
     /// A weak reference to the menu bar manager.
