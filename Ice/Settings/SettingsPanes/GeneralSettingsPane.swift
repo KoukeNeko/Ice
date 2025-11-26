@@ -15,6 +15,7 @@ struct GeneralSettingsPane: View {
     @State private var isApplyingItemSpacingOffset = false
     @State private var tempItemSpacingOffset: CGFloat = 0
     @State private var currentScreenWidth: CGFloat = 0
+    @State private var screenWidthSliderValue: CGFloat = 0
 
     private var itemSpacingOffsetKey: LocalizedStringKey {
         switch tempItemSpacingOffset {
@@ -352,6 +353,10 @@ struct GeneralSettingsPane: View {
 
     // MARK: Screen Info Display
 
+    private var screenWidthSliderLabel: LocalizedStringKey {
+        LocalizedStringKey("\(Int(screenWidthSliderValue)) px")
+    }
+
     @ViewBuilder
     private var screenInfoDisplay: some View {
         LabeledContent("Screen width") {
@@ -359,5 +364,15 @@ struct GeneralSettingsPane: View {
                 .monospacedDigit()
         }
         .annotation("The width of the main screen in pixels.")
+
+        LabeledContent("Slider value") {
+            IceSlider(
+                screenWidthSliderLabel,
+                value: $screenWidthSliderValue,
+                in: 0...currentScreenWidth,
+                step: 1
+            )
+        }
+        .annotation("Drag to select a position on the screen.")
     }
 }
