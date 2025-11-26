@@ -15,7 +15,6 @@ struct GeneralSettingsPane: View {
     @State private var isApplyingItemSpacingOffset = false
     @State private var tempItemSpacingOffset: CGFloat = 0
     @State private var currentScreenWidth: CGFloat = 0
-    @State private var screenWidthSliderValue: CGFloat = 0
 
     private var itemSpacingOffsetKey: LocalizedStringKey {
         switch tempItemSpacingOffset {
@@ -56,7 +55,7 @@ struct GeneralSettingsPane: View {
                 spacingOptions
             }
             IceSection {
-                screenInfoDisplay
+                wideScreenBypassOptions
             }
         }
         .onAppear {
@@ -351,28 +350,41 @@ struct GeneralSettingsPane: View {
         }
     }
 
-    // MARK: Screen Info Display
+    // MARK: Wide Screen Bypass Options
 
-    private var screenWidthSliderLabel: LocalizedStringKey {
-        LocalizedStringKey("\(Int(screenWidthSliderValue)) px")
+    private var wideScreenThresholdLabel: LocalizedStringKey {
+        LocalizedStringKey("\(Int(settings.wideScreenBypassThreshold)) px")
     }
 
     @ViewBuilder
-    private var screenInfoDisplay: some View {
-        LabeledContent("Screen width") {
-            Text("\(Int(currentScreenWidth)) px")
-                .monospacedDigit()
-        }
-        .annotation("The width of the main screen in pixels.")
+    private var wideScreenBypassOptions: some View {
+        Toggle("Enable wide screen bypass", isOn: $settings.enableWideScreenBypass)
+            .annotation("When enabled, Ice will show all menu bar items without hiding if any connected screen's width meets the threshold.")
 
-        LabeledContent("Slider value") {
-            IceSlider(
-                screenWidthSliderLabel,
-                value: $screenWidthSliderValue,
-                in: 0...currentScreenWidth,
-                step: 1
-            )
+        if settings.enableWideScreenBypass {
+            LabeledContent("Width threshold") {
+                IceSlider(
+                    wideScreenThresholdLabel,
+                    value: $settings.wideScreenBypassThreshold,
+                    in: 800...7680,
+                    step: 10
+                )
+            }
+            .annotation("Ice will bypass hiding when any screen width is at or above this value.")
+
+            LabeledContent("Current screen width") {
+                Text("\(Int(currentScreenWidth)) px")
+                    .monospacedDigit()
+            }
+            .annotation {
+                if settings.isWideScreenBypassActive {
+                    Label("Wide screen bypass is active", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                } else {
+                    Label("Wide screen bypass is inactive", systemImage: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
-        .annotation("Drag to select a position on the screen.")
     }
 }

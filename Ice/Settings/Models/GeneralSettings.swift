@@ -63,6 +63,26 @@ final class GeneralSettings: ObservableObject {
     /// is ``RehideStrategy/timed``.
     @Published var rehideInterval: TimeInterval = 15
 
+    /// A Boolean value that indicates whether Ice should bypass
+    /// hiding when the screen is wider than the threshold.
+    @Published var enableWideScreenBypass = false
+
+    /// The screen width threshold for the wide screen bypass feature.
+    /// When any connected screen's width exceeds this value, Ice will
+    /// show all menu bar items without hiding.
+    @Published var wideScreenBypassThreshold: Double = 1920
+
+    /// A Boolean value that indicates whether the wide screen bypass
+    /// is currently active based on the current screen configuration.
+    var isWideScreenBypassActive: Bool {
+        guard enableWideScreenBypass else {
+            return false
+        }
+        return NSScreen.screens.contains { screen in
+            screen.frame.width >= wideScreenBypassThreshold
+        }
+    }
+
     /// Encoder for properties.
     private let encoder = JSONEncoder()
 
@@ -93,6 +113,8 @@ final class GeneralSettings: ObservableObject {
         Defaults.ifPresent(key: .itemSpacingOffset, assign: &itemSpacingOffset)
         Defaults.ifPresent(key: .autoRehide, assign: &autoRehide)
         Defaults.ifPresent(key: .rehideInterval, assign: &rehideInterval)
+        Defaults.ifPresent(key: .enableWideScreenBypass, assign: &enableWideScreenBypass)
+        Defaults.ifPresent(key: .wideScreenBypassThreshold, assign: &wideScreenBypassThreshold)
 
         Defaults.ifPresent(key: .iceBarLocation) { rawValue in
             if let location = IceBarLocation(rawValue: rawValue) {
@@ -214,6 +236,20 @@ final class GeneralSettings: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { interval in
                 Defaults.set(interval, forKey: .rehideInterval)
+            }
+            .store(in: &c)
+
+        $enableWideScreenBypass
+            .receive(on: DispatchQueue.main)
+            .sink { enabled in
+                Defaults.set(enabled, forKey: .enableWideScreenBypass)
+            }
+            .store(in: &c)
+
+        $wideScreenBypassThreshold
+            .receive(on: DispatchQueue.main)
+            .sink { threshold in
+                Defaults.set(threshold, forKey: .wideScreenBypassThreshold)
             }
             .store(in: &c)
 

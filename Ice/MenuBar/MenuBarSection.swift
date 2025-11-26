@@ -56,7 +56,19 @@ final class MenuBarSection {
 
     /// A Boolean value that indicates whether the Ice Bar should be used.
     private var useIceBar: Bool {
-        appState?.settings.general.useIceBar ?? false
+        guard let appState else {
+            return false
+        }
+        if appState.settings.general.isWideScreenBypassActive {
+            return false
+        }
+        return appState.settings.general.useIceBar
+    }
+
+    /// A Boolean value that indicates whether hiding is bypassed
+    /// due to a wide screen being connected.
+    private var isWideScreenBypassActive: Bool {
+        appState?.settings.general.isWideScreenBypassActive ?? false
     }
 
     /// A weak reference to the menu bar manager.
@@ -78,6 +90,9 @@ final class MenuBarSection {
 
     /// A Boolean value that indicates whether the section is hidden.
     var isHidden: Bool {
+        if isWideScreenBypassActive {
+            return false
+        }
         if useIceBar {
             if controlItem.state == .showSection {
                 return false
@@ -151,7 +166,19 @@ final class MenuBarSection {
 
     /// Shows the section.
     func show() {
-        guard let menuBarManager, isHidden else {
+        guard let menuBarManager else {
+            return
+        }
+
+        if isWideScreenBypassActive {
+            menuBarManager.iceBarPanel.close()
+            for section in menuBarManager.sections {
+                section.controlItem.state = .showSection
+            }
+            return
+        }
+
+        guard isHidden else {
             return
         }
 
@@ -209,7 +236,15 @@ final class MenuBarSection {
 
     /// Hides the section.
     func hide() {
-        guard let menuBarManager, !isHidden else {
+        guard let menuBarManager else {
+            return
+        }
+
+        if isWideScreenBypassActive {
+            return
+        }
+
+        guard !isHidden else {
             return
         }
 

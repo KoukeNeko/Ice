@@ -150,6 +150,8 @@ extension Defaults {
         case rehideStrategy = "RehideStrategy"
         case rehideInterval = "RehideInterval"
         case itemSpacingOffset = "ItemSpacingOffset"
+        case enableWideScreenBypass = "EnableWideScreenBypass"
+        case wideScreenBypassThreshold = "WideScreenBypassThreshold"
 
         // MARK: Hotkeys Settings
         case hotkeys = "Hotkeys"
