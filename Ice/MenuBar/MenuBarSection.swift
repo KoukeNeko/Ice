@@ -104,18 +104,7 @@ final class MenuBarSection {
                 return menuBarManager?.iceBarPanel.currentSection != .alwaysHidden
             }
         }
-        switch name {
-        case .visible, .hidden:
-            if menuBarManager?.iceBarPanel.currentSection == .hidden {
-                return false
-            }
-            return controlItem.state == .hideSection
-        case .alwaysHidden:
-            if menuBarManager?.iceBarPanel.currentSection == .alwaysHidden {
-                return false
-            }
-            return controlItem.state == .hideSection
-        }
+        return controlItem.state == .hideSection
     }
 
     /// A Boolean value that indicates whether the section is enabled.
