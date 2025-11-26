@@ -59,16 +59,19 @@ final class MenuBarSection {
         guard let appState else {
             return false
         }
-        if appState.settings.general.isWideScreenBypassActive {
+        if appState.settings.general.isWideScreenBypassActive || appState.settings.general.isNotchBypassActive {
             return false
         }
         return appState.settings.general.useIceBar
     }
 
     /// A Boolean value that indicates whether hiding is bypassed
-    /// due to a wide screen being connected.
-    private var isWideScreenBypassActive: Bool {
-        appState?.settings.general.isWideScreenBypassActive ?? false
+    /// due to wide screen or notch settings.
+    private var isBypassActive: Bool {
+        guard let general = appState?.settings.general else {
+            return false
+        }
+        return general.isWideScreenBypassActive || general.isNotchBypassActive
     }
 
     /// A weak reference to the menu bar manager.
@@ -90,7 +93,7 @@ final class MenuBarSection {
 
     /// A Boolean value that indicates whether the section is hidden.
     var isHidden: Bool {
-        if isWideScreenBypassActive {
+        if isBypassActive {
             return false
         }
         if useIceBar {
@@ -170,7 +173,7 @@ final class MenuBarSection {
             return
         }
 
-        if isWideScreenBypassActive {
+        if isBypassActive {
             menuBarManager.iceBarPanel.close()
             for section in menuBarManager.sections {
                 section.controlItem.state = .showSection
@@ -240,7 +243,7 @@ final class MenuBarSection {
             return
         }
 
-        if isWideScreenBypassActive {
+        if isBypassActive {
             return
         }
 

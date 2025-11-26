@@ -152,6 +152,7 @@ extension Defaults {
         case itemSpacingOffset = "ItemSpacingOffset"
         case enableWideScreenBypass = "EnableWideScreenBypass"
         case wideScreenBypassThreshold = "WideScreenBypassThreshold"
+        case onlyShowOnScreensWithNotch = "OnlyShowOnScreensWithNotch"
 
         // MARK: Hotkeys Settings
         case hotkeys = "Hotkeys"

@@ -193,6 +193,7 @@ struct GeneralSettingsPane: View {
         useIceBar
         if settings.useIceBar {
             iceBarLocationPicker
+            onlyOnNotchScreens
         }
     }
 
@@ -219,6 +220,12 @@ struct GeneralSettingsPane: View {
                 Text("The Ice Bar is centered below the Ice icon.")
             }
         }
+    }
+
+    @ViewBuilder
+    private var onlyOnNotchScreens: some View {
+        Toggle("Only on screens with a notch", isOn: $settings.onlyShowOnScreensWithNotch)
+            .annotation("When enabled, Ice will only hide menu bar items on screens that have a notch.")
     }
 
     // MARK: Show Options

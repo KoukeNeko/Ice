@@ -72,6 +72,10 @@ final class GeneralSettings: ObservableObject {
     /// show all menu bar items without hiding.
     @Published var wideScreenBypassThreshold: Double = 1920
 
+    /// A Boolean value that indicates whether Ice should only hide
+    /// menu bar items on screens with a notch.
+    @Published var onlyShowOnScreensWithNotch = false
+
     /// A Boolean value that indicates whether the wide screen bypass
     /// is currently active based on the current screen configuration.
     var isWideScreenBypassActive: Bool {
@@ -81,6 +85,16 @@ final class GeneralSettings: ObservableObject {
         return NSScreen.screens.contains { screen in
             screen.frame.width >= wideScreenBypassThreshold
         }
+    }
+
+    /// A Boolean value that indicates whether hiding should be bypassed
+    /// because the current screen does not have a notch.
+    var isNotchBypassActive: Bool {
+        guard onlyShowOnScreensWithNotch else {
+            return false
+        }
+        let activeScreen = NSScreen.screenWithActiveMenuBar ?? NSScreen.main
+        return !(activeScreen?.hasNotch ?? false)
     }
 
     /// Encoder for properties.
@@ -115,6 +129,7 @@ final class GeneralSettings: ObservableObject {
         Defaults.ifPresent(key: .rehideInterval, assign: &rehideInterval)
         Defaults.ifPresent(key: .enableWideScreenBypass, assign: &enableWideScreenBypass)
         Defaults.ifPresent(key: .wideScreenBypassThreshold, assign: &wideScreenBypassThreshold)
+        Defaults.ifPresent(key: .onlyShowOnScreensWithNotch, assign: &onlyShowOnScreensWithNotch)
 
         Defaults.ifPresent(key: .iceBarLocation) { rawValue in
             if let location = IceBarLocation(rawValue: rawValue) {
@@ -243,7 +258,7 @@ final class GeneralSettings: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] enabled in
                 Defaults.set(enabled, forKey: .enableWideScreenBypass)
-                self?.applyWideScreenBypassIfNeeded()
+                self?.applyBypassIfNeeded()
             }
             .store(in: &c)
 
@@ -251,27 +266,43 @@ final class GeneralSettings: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] threshold in
                 Defaults.set(threshold, forKey: .wideScreenBypassThreshold)
-                self?.applyWideScreenBypassIfNeeded()
+                self?.applyBypassIfNeeded()
+            }
+            .store(in: &c)
+
+        $onlyShowOnScreensWithNotch
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] enabled in
+                Defaults.set(enabled, forKey: .onlyShowOnScreensWithNotch)
+                self?.applyBypassIfNeeded()
             }
             .store(in: &c)
 
         NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.applyWideScreenBypassIfNeeded()
+                self?.applyBypassIfNeeded()
+            }
+            .store(in: &c)
+
+        NSWorkspace.shared.notificationCenter
+            .publisher(for: NSWorkspace.activeSpaceDidChangeNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.applyBypassIfNeeded()
             }
             .store(in: &c)
 
         cancellables = c
     }
 
-    /// Applies the wide screen bypass by showing all menu bar sections
-    /// when the bypass is active.
-    private func applyWideScreenBypassIfNeeded() {
+    /// Applies bypass settings by showing all menu bar sections
+    /// when any bypass condition is active.
+    private func applyBypassIfNeeded() {
         guard let menuBarManager = appState?.menuBarManager else {
             return
         }
-        if isWideScreenBypassActive {
+        if isWideScreenBypassActive || isNotchBypassActive {
             menuBarManager.iceBarPanel.close()
             for section in menuBarManager.sections {
                 section.controlItem.state = .showSection
