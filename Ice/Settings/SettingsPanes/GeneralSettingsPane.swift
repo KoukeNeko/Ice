@@ -14,6 +14,7 @@ struct GeneralSettingsPane: View {
     @State private var presentedError: LocalizedErrorWrapper?
     @State private var isApplyingItemSpacingOffset = false
     @State private var tempItemSpacingOffset: CGFloat = 0
+    @State private var currentScreenWidth: CGFloat = 0
 
     private var itemSpacingOffsetKey: LocalizedStringKey {
         switch tempItemSpacingOffset {
@@ -53,6 +54,21 @@ struct GeneralSettingsPane: View {
             IceSection {
                 spacingOptions
             }
+            IceSection {
+                screenInfoDisplay
+            }
+        }
+        .onAppear {
+            updateScreenWidth()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)) { _ in
+            updateScreenWidth()
+        }
+    }
+
+    private func updateScreenWidth() {
+        if let screen = NSScreen.main {
+            currentScreenWidth = screen.frame.width
         }
     }
 
@@ -332,5 +348,16 @@ struct GeneralSettingsPane: View {
             }
             isApplyingItemSpacingOffset = false
         }
+    }
+
+    // MARK: Screen Info Display
+
+    @ViewBuilder
+    private var screenInfoDisplay: some View {
+        LabeledContent("Screen width") {
+            Text("\(Int(currentScreenWidth)) px")
+                .monospacedDigit()
+        }
+        .annotation("The width of the main screen in pixels.")
     }
 }
