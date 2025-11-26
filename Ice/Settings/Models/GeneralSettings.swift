@@ -241,19 +241,42 @@ final class GeneralSettings: ObservableObject {
 
         $enableWideScreenBypass
             .receive(on: DispatchQueue.main)
-            .sink { enabled in
+            .sink { [weak self] enabled in
                 Defaults.set(enabled, forKey: .enableWideScreenBypass)
+                self?.applyWideScreenBypassIfNeeded()
             }
             .store(in: &c)
 
         $wideScreenBypassThreshold
             .receive(on: DispatchQueue.main)
-            .sink { threshold in
+            .sink { [weak self] threshold in
                 Defaults.set(threshold, forKey: .wideScreenBypassThreshold)
+                self?.applyWideScreenBypassIfNeeded()
+            }
+            .store(in: &c)
+
+        NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.applyWideScreenBypassIfNeeded()
             }
             .store(in: &c)
 
         cancellables = c
+    }
+
+    /// Applies the wide screen bypass by showing all menu bar sections
+    /// when the bypass is active.
+    private func applyWideScreenBypassIfNeeded() {
+        guard let menuBarManager = appState?.menuBarManager else {
+            return
+        }
+        if isWideScreenBypassActive {
+            menuBarManager.iceBarPanel.close()
+            for section in menuBarManager.sections {
+                section.controlItem.state = .showSection
+            }
+        }
     }
 }
 
