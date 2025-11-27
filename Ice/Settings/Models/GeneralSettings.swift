@@ -346,8 +346,23 @@ final class GeneralSettings: ObservableObject {
         if excludeNotchScreensFromBypass {
             let currentScreen = NSScreen.screenWithActiveMenuBar ?? NSScreen.main
             if currentScreen?.hasNotch == true {
+                // On notched screens, ensure the icon reflects the Ice Bar state.
+                // If Ice Bar is not presented, set the icon to collapsed state.
+                if !menuBarManager.iceBarPanel.isVisible {
+                    if let visibleSection = menuBarManager.section(withName: .visible) {
+                        visibleSection.controlItem.state = .hideSection
+                    }
+                }
                 return
             }
+            // On non-notched screens with excludeNotchScreensFromBypass enabled,
+            // show all items (bypass mode) but keep icon in collapsed state
+            // to maintain consistency when switching between screens.
+            menuBarManager.iceBarPanel.close()
+            for section in menuBarManager.sections where section.name != .visible {
+                section.controlItem.state = .showSection
+            }
+            return
         }
         menuBarManager.iceBarPanel.close()
         for section in menuBarManager.sections {

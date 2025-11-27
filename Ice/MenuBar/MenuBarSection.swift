@@ -220,17 +220,17 @@ final class MenuBarSection {
         }
 
         if useIceBar {
-            // When preserving menu bar state (notched screen with bypass active),
-            // only show the Ice Bar without modifying control item states.
-            if !shouldPreserveMenuBarState {
-                // Make sure hidden and always-hidden control items are collapsed.
-                // Still update the visible control item (Ice icon) state to show
-                // its alternate icon.
-                for section in menuBarManager.sections {
-                    switch section.name {
-                    case .visible:
-                        section.controlItem.state = .showSection
-                    case .hidden, .alwaysHidden:
+            // Update control item states. In preserve mode, we only update the
+            // visible section's Ice icon to show its alternate state, but don't
+            // collapse hidden/always-hidden sections since items stay visible.
+            for section in menuBarManager.sections {
+                switch section.name {
+                case .visible:
+                    // Always update Ice icon to show "expanded" state
+                    section.controlItem.state = .showSection
+                case .hidden, .alwaysHidden:
+                    // Only collapse sections when not preserving menu bar state
+                    if !shouldPreserveMenuBarState {
                         section.controlItem.state = .hideSection
                     }
                 }
@@ -289,7 +289,12 @@ final class MenuBarSection {
         // When using Ice Bar on a notched screen while bypass is globally active,
         // don't change the menu bar item states. This prevents affecting the
         // menu bar appearance on non-notched screens that are under bypass.
+        // However, we still need to update the visible section's icon to show
+        // the "collapsed" state.
         if shouldPreserveMenuBarState {
+            if let visibleSection = menuBarManager.sections.first(where: { $0.name == .visible }) {
+                visibleSection.controlItem.state = .hideSection
+            }
             stopRehideChecks()
             return
         }
