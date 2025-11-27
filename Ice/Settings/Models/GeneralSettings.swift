@@ -323,16 +323,25 @@ final class GeneralSettings: ObservableObject {
     }
 
     /// Applies bypass settings by showing all menu bar sections
-    /// when the wide screen bypass is active.
+    /// when the wide screen bypass is active for the current screen.
     private func applyBypassIfNeeded() {
         guard let menuBarManager = appState?.menuBarManager else {
             return
         }
-        if isWideScreenBypassActive {
-            menuBarManager.iceBarPanel.close()
-            for section in menuBarManager.sections {
-                section.controlItem.state = .showSection
+        guard isWideScreenBypassActive else {
+            return
+        }
+        // When excludeNotchScreensFromBypass is enabled, don't apply bypass
+        // on screens with a notch.
+        if excludeNotchScreensFromBypass {
+            let currentScreen = NSScreen.screenWithActiveMenuBar ?? NSScreen.main
+            if currentScreen?.hasNotch == true {
+                return
             }
+        }
+        menuBarManager.iceBarPanel.close()
+        for section in menuBarManager.sections {
+            section.controlItem.state = .showSection
         }
     }
 }
