@@ -276,6 +276,37 @@ final class MenuBarSection {
         }
 
         stopRehideChecks()
+
+        // After hiding on a notched screen, restore bypass state for non-notched
+        // screens if wide screen bypass is active globally.
+        restoreBypassStateIfNeeded()
+    }
+
+    /// Restores the bypass state (showing all items) when the current screen
+    /// is excluded from bypass but other screens should still have bypass active.
+    ///
+    /// This handles the case where Ice Bar is closed on a notched screen,
+    /// but the menu bar state needs to be restored to show all items for
+    /// non-notched screens that are still under bypass.
+    private func restoreBypassStateIfNeeded() {
+        guard let appState, let menuBarManager else {
+            return
+        }
+        let settings = appState.settings.general
+        // Only restore if global bypass is active and we're excluding notched screens
+        guard settings.isWideScreenBypassActive,
+              settings.excludeNotchScreensFromBypass else {
+            return
+        }
+        // Check if current screen has a notch (meaning we just hid on a notched screen)
+        let currentScreen = NSScreen.screenWithActiveMenuBar ?? NSScreen.main
+        guard currentScreen?.hasNotch == true else {
+            return
+        }
+        // Restore bypass state: show all sections
+        for section in menuBarManager.sections {
+            section.controlItem.state = .showSection
+        }
     }
 
     /// Toggles the visibility of the section.
