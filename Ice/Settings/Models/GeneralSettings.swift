@@ -76,6 +76,16 @@ final class GeneralSettings: ObservableObject {
     /// menu bar items on screens with a notch.
     @Published var onlyShowOnScreensWithNotch = false
 
+    /// A Boolean value that indicates whether screens with a notch
+    /// should be excluded from the wide screen bypass check.
+    ///
+    /// When enabled, Ice will not consider screens with a notch when
+    /// determining if the wide screen bypass should be active. This
+    /// allows users to keep Ice Bar functionality on built-in MacBook
+    /// displays (which have notches) while still bypassing on external
+    /// wide monitors.
+    @Published var excludeNotchScreensFromBypass = false
+
     /// A Boolean value that indicates whether the wide screen bypass
     /// is currently active based on the current screen configuration.
     var isWideScreenBypassActive: Bool {
@@ -83,7 +93,11 @@ final class GeneralSettings: ObservableObject {
             return false
         }
         return NSScreen.screens.contains { screen in
-            screen.frame.width >= wideScreenBypassThreshold
+            let meetsWidthThreshold = screen.frame.width >= wideScreenBypassThreshold
+            if excludeNotchScreensFromBypass && screen.hasNotch {
+                return false
+            }
+            return meetsWidthThreshold
         }
     }
 
@@ -133,6 +147,7 @@ final class GeneralSettings: ObservableObject {
         Defaults.ifPresent(key: .enableWideScreenBypass, assign: &enableWideScreenBypass)
         Defaults.ifPresent(key: .wideScreenBypassThreshold, assign: &wideScreenBypassThreshold)
         Defaults.ifPresent(key: .onlyShowOnScreensWithNotch, assign: &onlyShowOnScreensWithNotch)
+        Defaults.ifPresent(key: .excludeNotchScreensFromBypass, assign: &excludeNotchScreensFromBypass)
 
         Defaults.ifPresent(key: .iceBarLocation) { rawValue in
             if let location = IceBarLocation(rawValue: rawValue) {
@@ -277,6 +292,14 @@ final class GeneralSettings: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] enabled in
                 Defaults.set(enabled, forKey: .onlyShowOnScreensWithNotch)
+                self?.applyBypassIfNeeded()
+            }
+            .store(in: &c)
+
+        $excludeNotchScreensFromBypass
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] enabled in
+                Defaults.set(enabled, forKey: .excludeNotchScreensFromBypass)
                 self?.applyBypassIfNeeded()
             }
             .store(in: &c)

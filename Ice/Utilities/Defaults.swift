@@ -153,6 +153,7 @@ extension Defaults {
         case enableWideScreenBypass = "EnableWideScreenBypass"
         case wideScreenBypassThreshold = "WideScreenBypassThreshold"
         case onlyShowOnScreensWithNotch = "OnlyShowOnScreensWithNotch"
+        case excludeNotchScreensFromBypass = "ExcludeNotchScreensFromBypass"
 
         // MARK: Hotkeys Settings
         case hotkeys = "Hotkeys"

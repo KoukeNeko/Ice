@@ -59,16 +59,39 @@ final class MenuBarSection {
         guard let appState else {
             return false
         }
-        if appState.settings.general.isWideScreenBypassActive {
+        if isBypassActiveForCurrentScreen {
             return false
         }
         return appState.settings.general.shouldUseIceBarOnCurrentScreen
     }
 
     /// A Boolean value that indicates whether hiding is bypassed
+    /// due to wide screen settings for the current screen.
+    ///
+    /// When `excludeNotchScreensFromBypass` is enabled, screens with a notch
+    /// will not be affected by the wide screen bypass, allowing Ice Bar to
+    /// remain functional on those screens.
+    private var isBypassActiveForCurrentScreen: Bool {
+        guard let appState else {
+            return false
+        }
+        let settings = appState.settings.general
+        guard settings.isWideScreenBypassActive else {
+            return false
+        }
+        if settings.excludeNotchScreensFromBypass {
+            let currentScreen = NSScreen.screenWithActiveMenuBar ?? NSScreen.main
+            if currentScreen?.hasNotch == true {
+                return false
+            }
+        }
+        return true
+    }
+
+    /// A Boolean value that indicates whether hiding is bypassed
     /// due to wide screen settings.
     private var isBypassActive: Bool {
-        appState?.settings.general.isWideScreenBypassActive ?? false
+        isBypassActiveForCurrentScreen
     }
 
     /// A weak reference to the menu bar manager.
@@ -84,7 +107,10 @@ final class MenuBarSection {
         if appState.activeSpace.isFullscreen {
             return NSScreen.screenWithMouse ?? NSScreen.main
         } else {
-            return NSScreen.main
+            // Use the screen with the active menu bar to ensure consistency
+            // with shouldUseIceBarOnCurrentScreen, especially when the
+            // "Only on screens with a notch" option is enabled.
+            return NSScreen.screenWithActiveMenuBar ?? NSScreen.main
         }
     }
 

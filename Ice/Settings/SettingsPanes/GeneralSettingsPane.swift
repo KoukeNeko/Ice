@@ -379,6 +379,8 @@ struct GeneralSettingsPane: View {
             }
             .annotation("Ice will bypass hiding when any screen width is at or above this value.")
 
+            excludeNotchScreensToggle
+
             LabeledContent("Current screen width") {
                 Text("\(Int(currentScreenWidth)) px")
                     .monospacedDigit()
@@ -392,6 +394,26 @@ struct GeneralSettingsPane: View {
                         .foregroundStyle(.secondary)
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var excludeNotchScreensToggle: some View {
+        Toggle(isOn: $settings.excludeNotchScreensFromBypass) {
+            HStack {
+                Text("Exclude screens with a notch")
+                DebugBadge()
+            }
+        }
+        .annotation {
+            Text(
+                """
+                When enabled, screens with a notch (such as built-in MacBook displays) \
+                will not trigger the wide screen bypass, even if their width exceeds the \
+                threshold. This allows Ice Bar to remain functional on notched screens \
+                while bypassing on external wide monitors.
+                """
+            )
         }
     }
 }
