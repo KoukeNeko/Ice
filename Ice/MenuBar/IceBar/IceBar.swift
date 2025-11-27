@@ -211,12 +211,6 @@ final class IceBarPanel: NSPanel {
     }
 
     override func close() {
-        // Update the visible section's icon state before closing.
-        // This ensures the icon switches back to the "collapsed" state
-        // when the panel is closed by the system (e.g., desktop preview).
-        if let visibleSection = appState?.menuBarManager.section(withName: .visible) {
-            visibleSection.controlItem.state = .hideSection
-        }
         super.close()
         contentView = nil
         currentSection = nil
