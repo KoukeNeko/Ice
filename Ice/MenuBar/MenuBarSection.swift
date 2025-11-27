@@ -119,6 +119,22 @@ final class MenuBarSection {
         if isBypassActive {
             return false
         }
+        // When preserving menu bar state (bypass active + excluding notched screens),
+        // items are always visible. On notched screens, use Ice Bar panel state
+        // to determine if the "hidden" items are being shown in Ice Bar.
+        if shouldPreserveMenuBarState {
+            let currentScreen = NSScreen.screenWithActiveMenuBar ?? NSScreen.main
+            if currentScreen?.hasNotch == true {
+                switch name {
+                case .visible, .hidden:
+                    return menuBarManager?.iceBarPanel.currentSection != .hidden
+                case .alwaysHidden:
+                    return menuBarManager?.iceBarPanel.currentSection != .alwaysHidden
+                }
+            }
+            // On non-notched screens with preserve state, items are never hidden
+            return false
+        }
         if useIceBar {
             if controlItem.state == .showSection {
                 return false
@@ -204,15 +220,19 @@ final class MenuBarSection {
         }
 
         if useIceBar {
-            // Make sure hidden and always-hidden control items are collapsed.
-            // Still update the visible control item (Ice icon) state to show
-            // its alternate icon.
-            for section in menuBarManager.sections {
-                switch section.name {
-                case .visible:
-                    section.controlItem.state = .showSection
-                case .hidden, .alwaysHidden:
-                    section.controlItem.state = .hideSection
+            // When preserving menu bar state (notched screen with bypass active),
+            // only show the Ice Bar without modifying control item states.
+            if !shouldPreserveMenuBarState {
+                // Make sure hidden and always-hidden control items are collapsed.
+                // Still update the visible control item (Ice icon) state to show
+                // its alternate icon.
+                for section in menuBarManager.sections {
+                    switch section.name {
+                    case .visible:
+                        section.controlItem.state = .showSection
+                    case .hidden, .alwaysHidden:
+                        section.controlItem.state = .hideSection
+                    }
                 }
             }
 
@@ -266,6 +286,14 @@ final class MenuBarSection {
         menuBarManager.iceBarPanel.close() // Make sure Ice Bar is always closed.
         menuBarManager.showOnHoverAllowed = true
 
+        // When using Ice Bar on a notched screen while bypass is globally active,
+        // don't change the menu bar item states. This prevents affecting the
+        // menu bar appearance on non-notched screens that are under bypass.
+        if shouldPreserveMenuBarState {
+            stopRehideChecks()
+            return
+        }
+
         switch name {
         case _ where useIceBar, .visible, .hidden:
             for section in menuBarManager.sections {
@@ -276,37 +304,21 @@ final class MenuBarSection {
         }
 
         stopRehideChecks()
-
-        // After hiding on a notched screen, restore bypass state for non-notched
-        // screens if wide screen bypass is active globally.
-        restoreBypassStateIfNeeded()
     }
 
-    /// Restores the bypass state (showing all items) when the current screen
-    /// is excluded from bypass but other screens should still have bypass active.
+    /// A Boolean value that indicates whether the menu bar state should be
+    /// preserved (not hidden) regardless of screen.
     ///
-    /// This handles the case where Ice Bar is closed on a notched screen,
-    /// but the menu bar state needs to be restored to show all items for
-    /// non-notched screens that are still under bypass.
-    private func restoreBypassStateIfNeeded() {
-        guard let appState, let menuBarManager else {
-            return
+    /// This is true when wide screen bypass is globally active AND notched
+    /// screens are excluded from bypass. In this mode, menu bar items stay
+    /// visible at all times, and Ice Bar acts as an overlay for convenience
+    /// on notched screens without affecting the global menu bar state.
+    private var shouldPreserveMenuBarState: Bool {
+        guard let appState else {
+            return false
         }
         let settings = appState.settings.general
-        // Only restore if global bypass is active and we're excluding notched screens
-        guard settings.isWideScreenBypassActive,
-              settings.excludeNotchScreensFromBypass else {
-            return
-        }
-        // Check if current screen has a notch (meaning we just hid on a notched screen)
-        let currentScreen = NSScreen.screenWithActiveMenuBar ?? NSScreen.main
-        guard currentScreen?.hasNotch == true else {
-            return
-        }
-        // Restore bypass state: show all sections
-        for section in menuBarManager.sections {
-            section.controlItem.state = .showSection
-        }
+        return settings.isWideScreenBypassActive && settings.excludeNotchScreensFromBypass
     }
 
     /// Toggles the visibility of the section.

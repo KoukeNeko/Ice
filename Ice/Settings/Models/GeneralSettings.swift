@@ -319,6 +319,16 @@ final class GeneralSettings: ObservableObject {
             }
             .store(in: &c)
 
+        // Monitor app activation to detect when user switches between screens
+        // by clicking on windows on different monitors.
+        NSWorkspace.shared.notificationCenter
+            .publisher(for: NSWorkspace.didActivateApplicationNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.applyBypassIfNeeded()
+            }
+            .store(in: &c)
+
         cancellables = c
     }
 
