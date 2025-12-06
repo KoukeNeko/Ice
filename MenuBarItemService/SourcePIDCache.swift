@@ -172,6 +172,7 @@ final class SourcePIDCache {
         Logger.default.debug("Received new running applications")
 
         let windowIDs = Bridging.getMenuBarWindowList(option: .itemsOnly)
+        let currentWindowIDSet = Set(windowIDs)
 
         state.withLock { state in
             // Convert the cached state to dictionaries keyed by pid to
@@ -179,8 +180,11 @@ final class SourcePIDCache {
             let appMappings = state.apps.reduce(into: [:]) { result, app in
                 result[app.processIdentifier] = app
             }
+
+            // Only preserve PID mappings for windows that still exist.
+            // This prevents unbounded growth of stale window ID entries.
             let pidMappings: [pid_t: [CGWindowID: pid_t]] = windowIDs.reduce(into: [:]) { result, windowID in
-                if let pid = state.pids[windowID] {
+                if let pid = state.pids[windowID], currentWindowIDSet.contains(windowID) {
                     result[pid, default: [:]][windowID] = pid
                 }
             }

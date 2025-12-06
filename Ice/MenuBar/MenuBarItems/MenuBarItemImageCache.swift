@@ -264,8 +264,33 @@ final class MenuBarItemImageCache: ObservableObject {
             newImages.merge(sectionImages) { (_, new) in new }
         }
 
-        await MainActor.run { [newImages] in
-            images.merge(newImages) { (_, new) in new }
+        await MainActor.run { [newImages, weak self] in
+            guard let self else { return }
+
+            // Build set of all valid tags for the sections being updated.
+            var validTagsForSections = Set<MenuBarItemTag>()
+            if let currentAppState = self.appState {
+                for section in sections {
+                    let sectionItems = currentAppState.itemManager.itemCache[section]
+                    for item in sectionItems {
+                        validTagsForSections.insert(item.tag)
+                    }
+                }
+            }
+
+            // Remove stale entries: keep images if either:
+            // 1. The tag belongs to a current item in the updated sections, OR
+            // 2. The tag is not from any of the updated sections (preserve other sections)
+            let updatedSectionTags = Set(newImages.keys).union(validTagsForSections)
+            self.images = self.images.filter { entry in
+                let belongsToUpdatedSections = updatedSectionTags.contains(entry.key)
+                if belongsToUpdatedSections {
+                    return validTagsForSections.contains(entry.key)
+                }
+                return true
+            }
+
+            self.images.merge(newImages) { (_, new) in new }
         }
     }
 
